@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/go-vgo/robotgo"
-	"math"
-	"math/rand"
 	"os"
 	"time"
 )
@@ -40,44 +38,19 @@ func clickUp(a *App) {
 }
 
 func moveMouse(a *App, targetX, targetY int) {
-	clamp := func(v, min, max int) int {
-		if v < min {
-			return min
-		}
-		if v > max {
-			return max
-		}
-		return v
+	steps := 800
+	delay := time.Millisecond
+
+	startX, startY := robotgo.Location()
+	dx := float64(targetX-startX) / float64(steps)
+	dy := float64(targetY-startY) / float64(steps)
+
+	for i := 0; i < steps; i++ {
+		x := int(float64(startX) + dx*float64(i))
+		y := int(float64(startY) + dy*float64(i))
+		robotgo.Move(x, y)
+		time.Sleep(delay)
 	}
 
-	curX, curY := robotgo.Location()
-	dx := targetX - curX
-	dy := targetY - curY
-
-	steps := int(math.Hypot(float64(dx), float64(dy))/6) + 12
-	if steps < 20 {
-		steps = 20
-	}
-
-	var lastX, lastY float64
-
-	for i := 1; i <= steps; i++ {
-		t := float64(i) / float64(steps)
-		ease := t * t * (3 - 2*t)
-
-		curXf := float64(dx) * ease
-		curYf := float64(dy) * ease
-
-		moveX := int(curXf - lastX)
-		moveY := int(curYf - lastY)
-
-		lastX = curXf
-		lastY = curYf
-
-		moveX = clamp(moveX, -127, 127)
-		moveY = clamp(moveY, -127, 127)
-
-		a.f.Write([]byte{'M', byte(int8(moveX)), byte(int8(moveY))})
-		time.Sleep(time.Duration(rand.Intn(5)+4) * time.Millisecond)
-	}
+	robotgo.Move(targetX, targetY)
 }

@@ -6,6 +6,7 @@ toolchain go1.24.5
 
 require (
 	github.com/go-vgo/robotgo v1.0.0
+	github.com/vcaesar/screenshot v0.11.1
 	github.com/wailsapp/wails/v2 v2.11.0
 	gitlab.logicxking.com/core/brain v0.0.0-20250923083013-569c13a38c0f
 	gocv.io/x/gocv v0.43.0
@@ -99,7 +100,6 @@ require (
 	github.com/vcaesar/gops v0.41.0 // indirect
 	github.com/vcaesar/imgo v0.41.0 // indirect
 	github.com/vcaesar/keycode v0.10.1 // indirect
-	github.com/vcaesar/screenshot v0.11.1 // indirect
 	github.com/vcaesar/tt v0.20.1 // indirect
 	github.com/wailsapp/go-webview2 v1.0.23 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect

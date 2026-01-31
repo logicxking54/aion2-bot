@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/go-vgo/robotgo"
 	"gitlab.logicxking.com/core/brain"
+	"gitlab.logicxking.com/core/brain/utils"
 	"log"
+	"math/rand/v2"
 	"os"
 	"strings"
 	"sync"
@@ -142,11 +144,232 @@ func (a *App) Error() string {
 }
 
 func (a *App) Start() {
-	a.running = true
-	a.logs = append(a.logs, map[string]string{
-		"date":    time.Now().Format(time.TimeOnly),
-		"content": fmt.Sprintf("%v", a.running),
-	})
+	go func() {
+		aa := 0
+		for aa <= 100 {
+			aa++
+			time.Sleep(time.Second)
+			x, y := robotgo.Location()
+			log.Println(x, y, aa)
+		}
+	}()
+
+	var displayRect robotgo.Rect
+	startingUp := false
+	respawning := false
+	attacking := false
+
+	startUp := func(a *App) {
+		startingUp = true
+
+		for {
+			if !respawning && !attacking {
+				break
+			}
+
+			log.Println("startUp checking", respawning, attacking)
+			time.Sleep(time.Second)
+		}
+
+		displayRect = robotgo.GetDisplayRect(0)
+		moveMouse(a, displayRect.X+(displayRect.W/2), displayRect.Y+(displayRect.H/2))
+		log.Println("displayRect.X", displayRect.X)
+		log.Println("displayRect.W", displayRect.W)
+		log.Println("displayRect.Y", displayRect.Y)
+		log.Println("displayRect.H", displayRect.H)
+		clickDown(a)
+		time.Sleep(time.Millisecond * 50)
+		clickUp(a)
+
+		for {
+			time.Sleep(time.Second)
+			log.Println("กำลังเปิด Map")
+			ok, x1, y1, w, h := FindPosition(0, "./input/abyss2_menumap.png")
+			if ok && w > 0 && h > 0 {
+				log.Println("เปิด Map เรียบร้อย", ok, x1, y1, w, h)
+				break
+			} else {
+				pressDown(a, 'm')
+				time.Sleep(time.Millisecond * 50)
+				pressUp(a, 'm')
+			}
+		}
+
+		retry := 0
+		moveMouse(a, displayRect.X+(displayRect.W/2), displayRect.H-100)
+
+		for retry <= 4 {
+			log.Println("กำลังหาจุดวาป")
+			clickDown(a)
+			moveMouse(a, displayRect.X+(displayRect.W/2), -(displayRect.H - 100))
+			clickUp(a)
+
+			ok, x, y, w, h := FindPosition(0, "./input/abyss2_teleport1.png")
+			if ok && w > 0 && h > 0 {
+				log.Println("เจอหาจุดวาปแล้ว")
+
+				moveMouse(a, int(x), int(y))
+				clickDown(a)
+				time.Sleep(time.Millisecond * 50)
+				clickUp(a)
+				break
+			}
+
+			moveMouse(a, displayRect.X+(displayRect.W/2), displayRect.H-100)
+			time.Sleep(time.Second)
+			retry++
+		}
+
+		log.Println("กำลังกดปุ่มวาป")
+		pressDown(a, 'f')
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(500-100+1)+100))
+		pressUp(a, 'f')
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(500-100+1)+100))
+		pressDown(a, 'f')
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(500-100+1)+100))
+		pressUp(a, 'f')
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(1500-500+1)+500))
+
+		moveMouse(a, displayRect.X+(displayRect.W/2), displayRect.Y+(displayRect.H/2))
+		clickDown(a)
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(500-100+1)+100))
+		clickUp(a)
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(1500-500+1)+500))
+
+		log.Println("กำลังกดปุ่ม confirm")
+		pressDown(a, 'f')
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(500-100+1)+100))
+		pressUp(a, 'f')
+		pressDown(a, 'f')
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(500-100+1)+100))
+		pressUp(a, 'f')
+		time.Sleep(time.Millisecond * time.Duration(rand.IntN(1500-500+1)+500))
+
+		time.Sleep(time.Second * 5)
+		startingUp = false
+	}
+
+	respawn := func(a *App, window *robotgo.Rect) {
+		respawning = true
+
+		for {
+			if !startingUp && !attacking {
+				break
+			}
+
+			log.Println("respawn checking", respawning, attacking)
+			time.Sleep(time.Second)
+		}
+
+		moveMouse(a, window.X+(window.W/2), window.Y+(window.H/2)+75)
+		clickDown(a)
+		time.Sleep(time.Millisecond * 50)
+		clickUp(a)
+
+		respawning = false
+	}
+
+	attack := func(a *App, window *robotgo.Rect, ok *bool, k1 *bool, k2 *bool) {
+		*ok = true
+
+		for {
+			if !utils.GetBool(k1) && !utils.GetBool(k2) {
+				break
+			}
+
+			log.Println("attack checking", utils.GetBool(k1), utils.GetBool(k2))
+			time.Sleep(time.Second)
+		}
+
+		for utils.GetBool(ok) {
+			pressDown(a, 'r')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+			pressUp(a, 'r')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+
+			pressDown(a, 'e')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+			pressUp(a, 'e')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+
+			pressDown(a, '1')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+			pressUp(a, '1')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+
+			pressDown(a, '2')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+			pressUp(a, '2')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+
+			time.Sleep(time.Second * time.Duration(rand.IntN(2-1+1)+1))
+		}
+	}
+
+	collection := func(a *App, ok *bool, k1 *bool, k2 *bool) {
+		*ok = true
+
+		for {
+			if !utils.GetBool(k1) && !utils.GetBool(k2) {
+				break
+			}
+
+			log.Println("attack checking", utils.GetBool(k1), utils.GetBool(k2))
+			time.Sleep(time.Second)
+		}
+
+		for utils.GetBool(ok) {
+			pressDown(a, 'f')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+			pressUp(a, 'f')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+30))
+
+			pressDown(a, 'w')
+			time.Sleep(time.Second * time.Duration(rand.IntN(4-1+1)+1))
+			pressUp(a, 'w')
+			time.Sleep(time.Second)
+
+			pressDown(a, 's')
+			time.Sleep(time.Second * time.Duration(rand.IntN(4-1+1)+1))
+			pressUp(a, 's')
+
+			time.Sleep(time.Second * time.Duration(rand.IntN(4-2+1)+2))
+		}
+	}
+
+	isDead := func() bool {
+		die, _, _, _, _ := FindPosition(0, "./input/dead.png")
+		if die {
+			log.Println("คุณตายแล้ว")
+			return true
+		} else {
+			log.Println("คุณยังไม่ตาย")
+			return false
+		}
+	}
+
+	rootDeadCount := 0
+	for {
+		startUp(a)
+		go attack(a, &displayRect, &attacking, &startingUp, &respawning)
+		go collection(a, &attacking, &startingUp, &respawning)
+
+		for {
+			if isDead() {
+				rootDeadCount++
+
+				if rootDeadCount >= 5 {
+					attacking = false
+					respawn(a, &displayRect)
+					rootDeadCount = 0
+					time.Sleep(time.Minute * 3)
+					break
+				}
+			}
+
+			time.Sleep(time.Second)
+		}
+	}
 }
 
 func (a *App) Stop() {
