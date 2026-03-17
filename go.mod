@@ -6,9 +6,9 @@ toolchain go1.24.5
 
 require (
 	github.com/go-vgo/robotgo v1.0.0
+	github.com/logicxking54/brain v0.0.0-20260316074510-0672681ab0e5
 	github.com/vcaesar/screenshot v0.11.1
 	github.com/wailsapp/wails/v2 v2.11.0
-	gitlab.logicxking.com/core/brain v0.0.0-20250923083013-569c13a38c0f
 	gocv.io/x/gocv v0.43.0
 )
 

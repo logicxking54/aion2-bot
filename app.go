@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/go-vgo/robotgo"
-	"gitlab.logicxking.com/core/brain"
-	"gitlab.logicxking.com/core/brain/utils"
 	"log"
 	"math/rand/v2"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-vgo/robotgo"
+	"github.com/logicxking54/brain"
+	"github.com/logicxking54/brain/utils"
 )
 
 type App struct {
@@ -25,7 +26,6 @@ type App struct {
 	err         string
 	overlayHwnd uintptr
 	once        sync.Once
-	monsterMats []MonsterMat
 }
 
 func NewApp() *App {
@@ -34,9 +34,8 @@ func NewApp() *App {
 	})
 
 	return &App{
-		appCtx:      appCtx,
-		logs:        make([]map[string]string, 0),
-		monsterMats: make([]MonsterMat, 0),
+		appCtx: appCtx,
+		logs:   make([]map[string]string, 0),
 	}
 }
 
@@ -113,14 +112,6 @@ func (a *App) startup(ctx context.Context) {
 		}
 
 		time.Sleep(time.Second * 2)
-	}
-
-	err := buildMonster(a)
-	if err != nil {
-		a.err = err.Error()
-		a.Stop()
-		log.Println(a.err)
-		return
 	}
 
 	a.logs = append(a.logs, map[string]string{
