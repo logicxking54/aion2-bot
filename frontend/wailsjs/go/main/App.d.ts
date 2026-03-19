@@ -7,6 +7,10 @@ export function IsRunning():Promise<boolean>;
 
 export function Log():Promise<Array<Record<string, string>>>;
 
-export function Start():Promise<void>;
+export function StartAutoKey():Promise<void>;
+
+export function StartBot():Promise<void>;
 
 export function Stop():Promise<void>;
+
+export function TimeStr():Promise<string>;

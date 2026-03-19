@@ -14,10 +14,18 @@ export function Log() {
   return window['go']['main']['App']['Log']();
 }
 
-export function Start() {
-  return window['go']['main']['App']['Start']();
+export function StartAutoKey() {
+  return window['go']['main']['App']['StartAutoKey']();
+}
+
+export function StartBot() {
+  return window['go']['main']['App']['StartBot']();
 }
 
 export function Stop() {
   return window['go']['main']['App']['Stop']();
+}
+
+export function TimeStr() {
+  return window['go']['main']['App']['TimeStr']();
 }

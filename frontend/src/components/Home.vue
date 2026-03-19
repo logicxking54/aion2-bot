@@ -1,6 +1,16 @@
 <template>
   <div class="p-4 flex flex-col h-full">
-    <div class="grow min-h-0 bg-black/50 mb-3 rounded-lg">
+    <div class="grid grid-cols-2 gap-x-2 mb-3">
+      <div
+          class="bg-black/50 text-left p-4 rounded-lg">
+        <p
+            class="text-xs text-white"
+        >
+          เวลา: {{ timeStr || 'รอเริ่มงาน' }}
+        </p>
+      </div>
+    </div>
+    <div class="grow min-h-0 bg-black/50 mb-4 rounded-lg">
       <div
           id="log-container"
           class="p-4 max-h-full w-full overflow-auto text-left"
@@ -14,12 +24,21 @@
         </p>
       </div>
     </div>
-    <button
+    <div
         v-if="!running"
-        class="bg-green-700 py-3 px-10 rounded-lg"
-        @click="onStart">
-      เริ่มทำงาน
-    </button>
+        class="flex items-center justify-between space-x-2"
+    >
+      <button
+          class="bg-green-700 py-3 w-full px-10 rounded-lg"
+          @click="onStartBot">
+        ปล่อยบอท
+      </button>
+      <button
+          class="bg-green-700 py-3 w-full px-10 rounded-lg"
+          @click="onStartAutoKey">
+        รัน auto key
+      </button>
+    </div>
     <button
         v-else-if="running"
         class="bg-red-700 py-3 px-10 rounded-lg"
@@ -31,16 +50,21 @@
 
 <script setup lang="ts">
 import {nextTick, onMounted, ref, watch} from 'vue'
-import {IsRunning, Log, Start, Stop} from '../../wailsjs/go/main/App'
+import {IsRunning, Log, StartAutoKey, StartBot, Stop, TimeStr} from '../../wailsjs/go/main/App'
 
+let timeStr = ref('')
 let running = ref(false)
 let appLogs = ref<{
   date: string
   content: string
 }[]>([])
 
-const onStart = () => {
-  Start()
+const onStartBot = () => {
+  StartBot()
+}
+
+const onStartAutoKey = () => {
+  StartAutoKey()
 }
 
 const onStop = () => {
@@ -49,6 +73,7 @@ const onStop = () => {
 
 onMounted(() => {
   setInterval(async () => {
+    timeStr.value = await TimeStr()
     appLogs.value = await Log() as any
     running.value = await IsRunning()
 
