@@ -3,6 +3,7 @@ module aion2-bot
 go 1.25.0
 
 require (
+	github.com/google/gopacket v1.1.19
 	github.com/logicxking54/brain v0.0.0-20260316074510-0672681ab0e5
 	github.com/wailsapp/wails/v2 v2.11.0
 )
