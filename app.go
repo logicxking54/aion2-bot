@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
 	"log"
 	"math/rand/v2"
 	"os"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -51,6 +51,7 @@ func NewApp() *App {
 	return &App{
 		appCtx:    appCtx,
 		logs:      make([]map[string]string, 0),
+		eUseAt:    utils.ToPointer(time.Now()),
 		eCooldown: 3000,
 		lCooldown: 800,
 		rCooldown: 800,
@@ -122,6 +123,10 @@ func (a *App) TimeStr() string {
 
 func (a *App) ECooldown() string {
 	if a.eUseAt == nil {
+		return "พร้อมใช้งาน"
+	}
+
+	if (a.eCooldown-time.Since(*a.eUseAt).Milliseconds())/1000 < 0 {
 		return "พร้อมใช้งาน"
 	}
 
@@ -217,100 +222,132 @@ func (a *App) StartBot() {
 }
 
 func (a *App) StartAutoKey() {
-	//a.logs = append(a.logs, map[string]string{
-	//	"date":    time.Now().Format(time.TimeOnly),
-	//	"content": "เปิดโหมด auto key",
-	//})
-	//a.running = true
-	//start := time.Now()
-	//
-	//for a.running {
-	//	a.timeStr = fmt.Sprintf("%dนาที %dวิ", int64(time.Since(start).Minutes()), int64(time.Since(start).Seconds()))
-	//	time.Sleep(time.Millisecond * 10)
-	//
-	//	log.Println("getting keyboard key")
-	//	ret, _, _ := getAsyncKeyState.Call(uintptr(0x54))
-	//
-	//	if ret&0x8000 != 0 {
-	//
-	//		pressDown(a, 'e')
-	//		time.Sleep(time.Millisecond * time.Duration(rand.IntN(50-30+1)+30))
-	//		pressUp(a, 'e')
-	//
-	//		time.Sleep(10 * time.Millisecond)
-	//	}
-	//}
-
-	devices, err := pcap.FindAllDevs()
-	if err != nil || len(devices) <= 0 {
-		a.logs = append(a.logs, map[string]string{
-			"date":    time.Now().Format(time.TimeOnly),
-			"content": "ค้นหา network device ล้มเหลว",
-		})
-		a.err = "ค้นหา network device ล้มเหลว"
-		log.Println(a.err)
-		return
-	}
-
-	var deviceName string
-	for _, device := range devices {
-		if strings.Contains(strings.ToLower(device.Description), "loopback") {
-			deviceName = device.Name
-			a.logs = append(a.logs, map[string]string{
-				"date":    time.Now().Format(time.TimeOnly),
-				"content": fmt.Sprintf("network device = %s", deviceName),
-			})
-			break
-		}
-	}
-
-	ih, err := pcap.NewInactiveHandle(deviceName)
-	if err != nil {
-		a.logs = append(a.logs, map[string]string{
-			"date":    time.Now().Format(time.TimeOnly),
-			"content": err.Error(),
-		})
-		a.err = err.Error()
-		log.Println(a.err)
-		return
-	}
-
-	ih.SetSnapLen(256)
-	ih.SetPromisc(true)
-	ih.SetTimeout(time.Millisecond)
-	ih.SetImmediateMode(true)
-
-	handle, err := ih.Activate()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = handle.SetBPFFilter("tcp and host 127.0.0.1 and port 59656")
-	if err != nil {
-		a.logs = append(a.logs, map[string]string{
-			"date":    time.Now().Format(time.TimeOnly),
-			"content": err.Error(),
-		})
-		a.err = err.Error()
-		log.Println(a.err)
-		return
-	}
-
 	a.logs = append(a.logs, map[string]string{
 		"date":    time.Now().Format(time.TimeOnly),
 		"content": "เปิดโหมด auto key",
 	})
-	a.pcapHanlder = handle
 	a.running = true
+	start := time.Now()
 
+	for a.running {
+		a.timeStr = fmt.Sprintf("%dนาที %dวิ", int64(time.Since(start).Minutes()), int64(time.Since(start).Seconds()))
+		time.Sleep(time.Millisecond * 10)
+
+		ret, _, _ := getAsyncKeyState.Call(uintptr(0xDB))
+		if ret&0x8000 != 0 {
+			pressDown(a, 'e')
+			time.Sleep(time.Millisecond * time.Duration(rand.IntN(50-30+1)+30))
+			pressUp(a, 'e')
+
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+}
+
+func (a *App) StartAutoKeyNetwork() {
+	//devices, err := pcap.FindAllDevs()
+	//if err != nil || len(devices) <= 0 {
+	//	a.logs = append(a.logs, map[string]string{
+	//		"date":    time.Now().Format(time.TimeOnly),
+	//		"content": "ค้นหา network device ล้มเหลว",
+	//	})
+	//	a.err = "ค้นหา network device ล้มเหลว"
+	//	log.Println(a.err)
+	//	return
+	//}
+	//
+	//var deviceName string
+	//for _, device := range devices {
+	//	if strings.Contains(strings.ToLower(device.Description), "loopback") {
+	//		deviceName = device.Name
+	//		a.logs = append(a.logs, map[string]string{
+	//			"date":    time.Now().Format(time.TimeOnly),
+	//			"content": fmt.Sprintf("network device = %s", deviceName),
+	//		})
+	//		break
+	//	}
+	//}
+	//
+	//ih, err := pcap.NewInactiveHandle(deviceName)
+	//if err != nil {
+	//	a.logs = append(a.logs, map[string]string{
+	//		"date":    time.Now().Format(time.TimeOnly),
+	//		"content": err.Error(),
+	//	})
+	//	a.err = err.Error()
+	//	log.Println(a.err)
+	//	return
+	//}
+	//
+	//ih.SetSnapLen(256)
+	//ih.SetPromisc(true)
+	//ih.SetTimeout(time.Millisecond)
+	//ih.SetImmediateMode(true)
+	//
+	//handle, err := ih.Activate()
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//err = handle.SetBPFFilter("tcp and host 127.0.0.1 and port 52744")
+	//if err != nil {
+	//	a.logs = append(a.logs, map[string]string{
+	//		"date":    time.Now().Format(time.TimeOnly),
+	//		"content": err.Error(),
+	//	})
+	//	a.err = err.Error()
+	//	log.Println(a.err)
+	//	return
+	//}
+	//
+	a.logs = append(a.logs, map[string]string{
+		"date":    time.Now().Format(time.TimeOnly),
+		"content": "เปิดโหมด auto key",
+	})
+	//a.pcapHanlder = handle
+	a.running = true
+	//
+	//go func(running *bool) {
+	//	for *running {
+	//		data, _, err := a.pcapHanlder.ZeroCopyReadPacketData()
+	//		if err != nil {
+	//			continue
+	//		}
+	//
+	//		a.processGamePacket(data)
+	//	}
+	//}(&a.running)
+	//
+	//go func(running *bool) {
+	//	for *running {
+	//		ret, _, _ := getAsyncKeyState.Call(uintptr(0xDB))
+	//		if ret&0x8000 != 0 {
+	//			if a.rUseAt == nil {
+	//				pressDown(a, 'r')
+	//				time.Sleep(time.Millisecond * time.Duration(rand.IntN(10-3+1)+3))
+	//				pressUp(a, 'r')
+	//			} else if a.tUseAt == nil {
+	//				pressDown(a, 't')
+	//				time.Sleep(time.Millisecond * time.Duration(rand.IntN(10-3+1)+3))
+	//				pressUp(a, 't')
+	//			}
+	//		}
+	//
+	//		time.Sleep(time.Millisecond)
+	//	}
+	//}(&a.running)
+	//
 	go func(running *bool) {
 		for *running {
-			data, _, err := a.pcapHanlder.ZeroCopyReadPacketData()
-			if err != nil {
-				continue
+			ret, _, _ := getAsyncKeyState.Call(uintptr(0xDB))
+			if ret&0x8000 != 0 {
+				pressDown(a, 'r')
+				time.Sleep(time.Millisecond * time.Duration(rand.IntN(10-3+1)+3))
+				pressUp(a, 'r')
+				time.Sleep(time.Millisecond * time.Duration(rand.IntN(80-30+1)+70))
 			}
 
-			a.processGamePacket(data)
+			time.Sleep(time.Millisecond)
 		}
 	}(&a.running)
 
@@ -318,71 +355,13 @@ func (a *App) StartAutoKey() {
 		for *running {
 			ret, _, _ := getAsyncKeyState.Call(uintptr(0xDB))
 			if ret&0x8000 != 0 {
-				//if a.eUseAt == nil {
-				//	pressDown(a, 'e')
-				//	time.Sleep(time.Millisecond * time.Duration(rand.IntN(50-30+1)+30))
-				//	pressUp(a, 'e')
-				//} else if a.tUseAt == nil {
-				//	pressDown(a, 't')
-				//	time.Sleep(time.Millisecond * time.Duration(rand.IntN(50-30+1)+30))
-				//	pressUp(a, 't')
-				//} else if a.rUseAt == nil {
-				//	pressDown(a, 'r')
-				//	time.Sleep(time.Millisecond * time.Duration(rand.IntN(50-30+1)+30))
-				//	pressUp(a, 'r')
-				//}
-
-				if a.rUseAt == nil {
-					for a.rUseAt == nil {
-						pressDown(a, 'r')
-						time.Sleep(time.Millisecond * time.Duration(rand.IntN(20-3+1)+3))
-						pressUp(a, 'r')
-					}
-				} else if a.tUseAt == nil {
-					for a.tUseAt == nil {
-						pressDown(a, 't')
-						time.Sleep(time.Millisecond * time.Duration(rand.IntN(20-3+1)+3))
-						pressUp(a, 't')
-					}
-				}
+				pressDown(a, 'e')
+				time.Sleep(time.Millisecond * time.Duration(rand.IntN(50-10+1)+10))
+				pressUp(a, 'e')
+				time.Sleep(time.Millisecond * time.Duration(rand.IntN(120-30+1)+30))
 			}
 
 			time.Sleep(time.Millisecond)
-		}
-	}(&a.running)
-
-	//go func(running *bool) {
-	//	for *running {
-	//		ret, _, _ := getAsyncKeyState.Call(uintptr(0xDB))
-	//		if ret&0x8000 != 0 {
-	//			pressDown(a, 'q')
-	//			time.Sleep(time.Millisecond * time.Duration(rand.IntN(20-3+1)+3))
-	//			pressUp(a, 'q')
-	//			time.Sleep(time.Millisecond * time.Duration(rand.IntN(20-3+1)+3))
-	//		}
-	//	}
-	//}(&a.running)
-	//
-	//go func(running *bool) {
-	//	for *running {
-	//		ret, _, _ := getAsyncKeyState.Call(uintptr(0xDB))
-	//		if ret&0x8000 != 0 {
-	//			if a.eUseAt == nil {
-	//				pressDown(a, 'e')
-	//				time.Sleep(time.Millisecond * time.Duration(rand.IntN(20-3+1)+3))
-	//				pressUp(a, 'e')
-	//			}
-	//		}
-	//	}
-	//}(&a.running)
-
-	go func(running *bool) {
-		for *running {
-			if a.eUseAt != nil && (a.eCooldown-time.Since(*a.eUseAt).Milliseconds())/1000 <= 0 {
-				a.eUseAt = nil
-			}
-
-			time.Sleep(10 * time.Millisecond)
 		}
 	}(&a.running)
 }
@@ -409,63 +388,76 @@ func (a *App) readVarInt(data []byte, offset *int) int {
 }
 
 func (a *App) processGamePacket(data []byte) {
-	if len(data) < 10 {
+	if len(data) < 15 {
 		return
 	}
 
-	for i := 0; i < len(data)-10; i++ {
-		isDamage := data[i] == 0x04 && data[i+1] == 0x38
-		isDoT := data[i] == 0x05 && data[i+1] == 0x38
+	idx := bytes.Index(data, []byte{0x04, 0x38})
+	if idx == -1 {
+		return
+	}
 
-		if isDamage && !isDoT {
-			curr := i + 2
+	curr := idx + 2
+	_ = a.readVarInt(data, &curr)
+	_ = a.readVarInt(data, &curr)
+	_ = a.readVarInt(data, &curr)
+	_ = a.readVarInt(data, &curr)
 
-			for j := curr; j < curr+12 && j+4 <= len(data); j++ {
-				skillRaw := binary.LittleEndian.Uint32(data[j : j+4])
-				skillID := int(skillRaw) - (int(skillRaw) % 10000)
+	if curr+4 <= len(data) {
+		skillRaw := binary.LittleEndian.Uint32(data[curr : curr+4])
+		skillID := int(skillRaw) - (int(skillRaw) % 10000)
 
-				if skillID == 1010000 {
+		switch skillID {
+		case 1010000:
+			return
+
+		case 15050000: // Blaze
+			if skillRaw == 15053450 {
+				a.eUseAt = utils.ToPointer(time.Now())
+			}
+
+		case 15210000: // Flame Arrow
+			a.rUseAt = utils.ToPointer(time.Now())
+			a.tUseAt = nil
+			log.Println("Flame Arrow", skillID, skillRaw, time.Now())
+
+		case 15030000: // Burst
+			a.rUseAt = utils.ToPointer(time.Now())
+			a.tUseAt = nil
+			log.Println("Burst", skillID, skillRaw, time.Now())
+
+		case 15250000: // Pyroclasm
+			if skillRaw == 15250450 {
+				now := time.Now()
+				if a.r3UseAt != nil && now.Sub(*a.r3UseAt) < time.Millisecond {
 					return
 				}
-
-				if skillID == 15050000 && skillRaw == 15053450 { // Blaze
-					a.eUseAt = utils.ToPointer(time.Now())
-				} else if skillID == 15210000 { // Flame Arrow
-					a.rUseAt = utils.ToPointer(time.Now())
-					a.tUseAt = nil
-					log.Println("Flame Arrow", skillID, skillRaw, time.Now())
-				} else if skillID == 15030000 { // Burst
-					a.rUseAt = utils.ToPointer(time.Now())
-					a.tUseAt = nil
-					log.Println("Burst", skillID, skillRaw, time.Now())
-				} else if skillID == 15250000 && skillRaw == 15250450 { // Pyroclasm
-					if a.r3UseAt != nil && time.Now().Sub(*a.r3UseAt) < time.Millisecond {
-						return
-					}
-
-					a.rUseAt = utils.ToPointer(time.Now())
-					a.r3UseAt = utils.ToPointer(time.Now())
-					a.tUseAt = nil
-					a.eUseAt = nil
-					log.Println("Pyroclasm", skillID, skillRaw, time.Now())
-				} else if skillID == 15090000 && skillRaw == 15092340 { // Ice Chain
-					if a.tUseAt != nil && time.Now().Sub(*a.tUseAt) < time.Millisecond {
-						return
-					}
-
-					a.tUseAt = utils.ToPointer(time.Now())
-					a.rUseAt = nil
-					log.Println("Ice Chain", skillID, skillRaw, time.Now())
-				} else if skillID == 15100000 { // Cold Wave
-					if a.tUseAt != nil && time.Now().Sub(*a.tUseAt) < time.Millisecond {
-						return
-					}
-
-					a.tUseAt = utils.ToPointer(time.Now())
-					a.rUseAt = nil
-					log.Println("Cold Wave", skillID, skillRaw, time.Now())
-				}
+				a.rUseAt = utils.ToPointer(now)
+				a.r3UseAt = utils.ToPointer(now)
+				a.tUseAt = nil
+				a.eUseAt = nil
+				log.Println("Pyroclasm", skillID, skillRaw, now)
 			}
+
+		case 15090000: // Ice Chain
+			if skillRaw == 15092340 {
+				now := time.Now()
+				if a.tUseAt != nil && now.Sub(*a.tUseAt) < time.Millisecond {
+					return
+				}
+				a.tUseAt = utils.ToPointer(now)
+				a.rUseAt = nil
+				log.Println("Ice Chain", skillID, skillRaw, now)
+			}
+
+		case 15100000: // Cold Wave
+			now := time.Now()
+			if a.tUseAt != nil && now.Sub(*a.tUseAt) < time.Millisecond {
+				return
+			}
+			a.tUseAt = utils.ToPointer(now)
+			a.rUseAt = nil
+			log.Println("Cold Wave", skillID, skillRaw, now)
 		}
 	}
 }

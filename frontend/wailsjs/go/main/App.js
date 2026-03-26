@@ -30,6 +30,10 @@ export function StartAutoKey() {
   return window['go']['main']['App']['StartAutoKey']();
 }
 
+export function StartAutoKeyNetwork() {
+  return window['go']['main']['App']['StartAutoKeyNetwork']();
+}
+
 export function StartBot() {
   return window['go']['main']['App']['StartBot']();
 }

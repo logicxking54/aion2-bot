@@ -65,6 +65,11 @@
           @click="onStartAutoKey">
         รัน auto key
       </button>
+      <button
+          class="bg-green-700 py-3 w-full px-10 rounded-lg"
+          @click="onStartAutoKeyNetwork">
+        รัน auto key network
+      </button>
     </div>
     <button
         v-else-if="running"
@@ -84,6 +89,7 @@ import {
   Log,
   RCooldown,
   StartAutoKey,
+  StartAutoKeyNetwork,
   StartBot,
   Stop,
   TimeStr
@@ -105,6 +111,10 @@ const onStartBot = () => {
 
 const onStartAutoKey = () => {
   StartAutoKey()
+}
+
+const onStartAutoKeyNetwork = () => {
+  StartAutoKeyNetwork()
 }
 
 const onStop = () => {

@@ -15,6 +15,8 @@ export function RCooldown():Promise<string>;
 
 export function StartAutoKey():Promise<void>;
 
+export function StartAutoKeyNetwork():Promise<void>;
+
 export function StartBot():Promise<void>;
 
 export function Stop():Promise<void>;
